@@ -6,32 +6,37 @@ namespace ServerCore
 {
     class Program
     {
-        volatile static bool _stop = false;
-
-        static void ThreadMain()
-        {
-            Console.WriteLine("쓰레드 시작");
-
-            while(_stop == false)
-            {
-                // 누군가가 stop 신호를 해주기를 기다린다
-            }
-            Console.WriteLine("쓰레드 종료");
-        }
 
         static void Main(string[] args)
         {
-            Task t = new Task(ThreadMain);
-            t.Start();
+            int[,] arr = new int[10000, 10000];
 
-            Thread.Sleep(1000);
+            {
+                long now = DateTime.Now.Ticks;
+                for(int i = 0; i < 10000; i++)
+                {
+                    for(int j = 0; j <10000; j++)
+                    {
+                        arr[i,j] = 1;
+                    }
+                }
+                long end = DateTime.Now.Ticks;
+                Console.WriteLine($"(i,j) 순서 걸린 시간 {end - now}");
+            }
+            {
+                long now = DateTime.Now.Ticks;
+                for (int i = 0; i < 10000; i++)
+                {
+                    for (int j = 0; j < 10000; j++)
+                    {
+                        arr[j, i] = 1;
+                    }
+                }
+                long end = DateTime.Now.Ticks;
+                Console.WriteLine($"(j,i) 순서 걸린 시간 {end - now}");
+            }
 
-            _stop = true;
-
-            Console.WriteLine("Stop 호출");
-            Console.WriteLine("종료 대기중");
-            t.Wait();
-            Console.WriteLine("종료 성공");
+            // Spacial Locality (공간적 캐시 접근)으로 인해 첫번째 반복문이 두번째 반복문보다 훨씬 빠르다.
         }
     }
 }
