@@ -8,38 +8,47 @@ namespace ServerCore
     class Program
     {
         static int number = 0;
+        static object _obj = new object();
 
         static void Thread_1()
         {
-            // atomic : 원자성
-            
-            // 골드 -= 100
-            // 인벤 += 검
-            // 둘 중 하나라도 누락되면 안됨
-
             for (int i = 0; i < 1000000; i++)
             {
-                int afterValue =  Interlocked.Increment(ref number);  // 원자적으로 연산함으로써 문제를 해결하지만, 성능의 손해가 큼
-                // 연산 후의 값을 반환해주어 정확한 값임이 보장됨
-                /*number++;*/
+                // 상호배제 Mutual Exclusive
+
+                lock(_obj)
+                {
+                    number++;
+                }
+                /*Monitor.Enter(_obj);    // 문을 잠그는 행위
+
+                number++;   // 코드가 길면 관리하기 어려워짐
+                // return;  // !!!!!!!!!!!!!!
+                // 데드락 DeadLock
+                // 예상치 못한 상황에서도 문제이기 때문에 대응하기 힘듬 (ex. divide by zero)
+
+                Monitor.Exit(_obj);     // 잠금을 풀어준다*/
+
             }
         }
         static void Thread_2()
         {
             for (int i = 0; i < 1000000; i++)
             {
-                Interlocked.Decrement(ref number);
-                /*number--;*/
+                lock(_obj)
+                {
+                    number--;
+                }
+                /*Monitor.Enter(_obj);
+
+                number--;
+
+                Monitor.Exit(_obj);*/
             }
         }
 
         static void Main(string[] args)
         {
-            // sudo code
-            /*number++;*/
-            /*int temp = number;
-            temp += 1;
-            number = temp;*/
 
             Task t1 = new Task(Thread_1);
             Task t2 = new Task(Thread_2);
