@@ -4,74 +4,57 @@ using System.Threading.Tasks;
 
 namespace ServerCore
 {
-    class SpinLock
-    {
-        volatile int _locked = 0;
-
-        public void Acquire()
-        {
-            while (true)
-            {
-                /*int original = Interlocked.Exchange(ref _locked, 1);
-                if (original == 0)
-                    break;*/
-
-                // CAS Compare-and-Swap
-                int expected = 0;
-                int desired = 1;
-                int original = Interlocked.CompareExchange(ref _locked, desired, expected);
-                if (original == expected)
-                    break;
-
-                // 쉬다 올게~
-                //Thread.Sleep(1);    // 무조건 휴식 => 무조건 1ms 정도 쉬고 싶어요
-                //Thread.Sleep(0);    // 조건부 양보 => 자신보다 우선순위가 낮은 애들한테는 양보 불가 => 우선순위가 나보다 같거나 높은 쓰레드가 없으면 다시 본인한테
-                Thread.Yield();     // 관대한 양보 => 관대하게 양보할 테니, 지금 실행 가능한 쓰레드가 있으면 실행하세요 => 실행 가능한 애가 없으면 남은 시간 소모
-            }
-        }
-
-        public void Release()
-        {
-            _locked = 0;
-        }
-    }
 
     class Program
     {
-        static int _num = 0;
-        static SpinLock _lock = new SpinLock();
+        // 상호배제
 
-        static void Thread_1()
+        static object _lock = new object();         // 1) Monitor 기반
+        static SpinLock _lock2 = new SpinLock();    // 2) 구현되어 있는 스핀락 같은 경우, 성공할 때까지 시도하다가 실패하는 시간이 길어지면 양보하는 방식으로 바꿈
+        //static Mutex _lock3 = new Mutex();          // 3) 잘 안씀
+
+
+        // 안바뀔 확률이 99.999999...%
+        // RWLock Reader Writer Lock
+        static ReaderWriterLockSlim _lock3 = new ReaderWriterLockSlim();    // 4) 쓰기 비율이 매우 낮을 때
+        class Reward
         {
-            for (int i = 0; i < 1000000; i++)
-            {
-                _lock.Acquire();
-                _num++;
-                _lock.Release();
-            }
+
         }
 
-        static void Thread_2()
+        static Reward GetRewardById(int id)
         {
-            for (int i = 0; i < 1000000; i++)
-            {
-                _lock.Acquire();
-                _num--;
-                _lock.Release();
-            }
-        }
+            _lock3.EnterReadLock();
 
+            _lock3.ExitReadLock();
+            return null;
+        }
+        static void AddReward(Reward reward)
+        {
+            _lock3.EnterWriteLock();
+
+            _lock3.ExitWriteLock();
+        }
 
         static void Main(string[] args)
         {
-            Task t1 = new Task(Thread_1);
-            Task t2 = new Task(Thread_2);
-            t1.Start();
-            t2.Start();
+            // 1)
+            lock(_lock)
+            {
 
-            Task.WaitAll(t1, t2);
-            Console.WriteLine(_num);
+            }
 
+            // 2)
+            bool lockTaken = false;
+            try
+            {
+                _lock2.Enter(ref lockTaken);
+            }
+            finally
+            {
+                if (lockTaken)
+                    _lock2.Exit();
+            }
         }
     }
 }
