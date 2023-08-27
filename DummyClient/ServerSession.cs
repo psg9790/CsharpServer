@@ -8,17 +8,8 @@ using ServerCore;
 
 namespace DummyClient
 {
-    public abstract class Packet
-    {
-        public ushort size;
-        public ushort packetId;
 
-        public abstract ArraySegment<byte> Write();
-        public abstract void Read(ArraySegment<byte> s);
-
-    }
-
-    class PlayerInfoReq : Packet
+    class PlayerInfoReq
     {
         public long playerId;
         public string name;
@@ -56,42 +47,7 @@ namespace DummyClient
 
         public List<SkillInfo> skills = new List<SkillInfo>();
 
-        public PlayerInfoReq()
-        {
-            this.packetId = (ushort)PacketID.PlayerInfoReq;
-        }
-
-        public override void Read(ArraySegment<byte> segment)
-        {
-            ushort count = 0;
-
-            ReadOnlySpan<byte> s = new ReadOnlySpan<byte>(segment.Array, segment.Offset, segment.Count );
-
-            count += sizeof(ushort);
-            count += sizeof(ushort);
-            this.playerId = BitConverter.ToInt64(s.Slice(count, s.Length - count));
-            count += sizeof(ulong);
-
-            // string
-            ushort nameLen = BitConverter.ToUInt16(s.Slice(count, s.Length - count));
-            count += sizeof(ushort);
-            this.name = Encoding.Unicode.GetString(s.Slice(count, nameLen));
-            count += nameLen;
-
-            // skill list
-            skills.Clear();
-            ushort skillLen = BitConverter.ToUInt16(s.Slice(count, s.Length - count));
-            count += sizeof(ushort);
-            for(int i =0; i < skillLen; i++)
-            {
-                SkillInfo skill = new SkillInfo();
-                skill.Read(s, ref count);
-                skills.Add(skill);
-            }
-
-        }
-
-        public override ArraySegment<byte> Write()
+        public ArraySegment<byte> Write()
         {
             ArraySegment<byte> segment = SendBufferHelper.Open(4096);
 
@@ -102,7 +58,7 @@ namespace DummyClient
 
             //success &= BitConverter.TryWriteBytes(new Span<byte>(s.Array, s.Offset, s.Count), packet.size);
             count += sizeof(ushort);
-            success &= BitConverter.TryWriteBytes(s.Slice(count, s.Length - count), this.packetId);
+            success &= BitConverter.TryWriteBytes(s.Slice(count, s.Length - count), (ushort)PacketID.PlayerInfoReq);
             count += sizeof(ushort);
             success &= BitConverter.TryWriteBytes(s.Slice(count, s.Length - count), this.playerId);
             count += sizeof(ulong);
@@ -131,6 +87,37 @@ namespace DummyClient
 
             return SendBufferHelper.Close(count);
         }
+
+        public void Read(ArraySegment<byte> segment)
+        {
+            ushort count = 0;
+
+            ReadOnlySpan<byte> s = new ReadOnlySpan<byte>(segment.Array, segment.Offset, segment.Count);
+
+            count += sizeof(ushort);
+            count += sizeof(ushort);
+            this.playerId = BitConverter.ToInt64(s.Slice(count, s.Length - count));
+            count += sizeof(ulong);
+
+            // string
+            ushort nameLen = BitConverter.ToUInt16(s.Slice(count, s.Length - count));
+            count += sizeof(ushort);
+            this.name = Encoding.Unicode.GetString(s.Slice(count, nameLen));
+            count += nameLen;
+
+            // skill list
+            skills.Clear();
+            ushort skillLen = BitConverter.ToUInt16(s.Slice(count, s.Length - count));
+            count += sizeof(ushort);
+            for (int i = 0; i < skillLen; i++)
+            {
+                SkillInfo skill = new SkillInfo();
+                skill.Read(s, ref count);
+                skills.Add(skill);
+            }
+
+        }
+
     }
 
     public enum PacketID
