@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Net.Sockets;
 using System.Text;
-using System.Threading;
 using ServerCore;
 
 namespace DummyClient
@@ -76,7 +74,7 @@ namespace DummyClient
             count += sizeof(ushort);
             foreach(SkillInfo skill in skills)
             {
-                success = skill.Write(s, ref count);
+                success &= skill.Write(s, ref count);
             }
 
 
