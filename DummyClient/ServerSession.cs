@@ -19,11 +19,11 @@ namespace DummyClient
         {
             Console.WriteLine($"OnConnected: {endPoint}");
 
-            PlayerInfoReq packet = new PlayerInfoReq() { playerId = 1001, name = "ABCD" };
-            packet.skills.Add(new PlayerInfoReq.SkillInfo() { id = 101, duration = 3.0f, level = 1 });
-            packet.skills.Add(new PlayerInfoReq.SkillInfo() { id = 102, duration = 6.0f, level = 3 });
-            packet.skills.Add(new PlayerInfoReq.SkillInfo() { id = 103, duration = 9.0f, level = 6 });
-            packet.skills.Add(new PlayerInfoReq.SkillInfo() { id = 104, duration = 12.0f, level = 9 });
+            C_PlayerInfoReq packet = new C_PlayerInfoReq() { playerId = 1001, name = "ABCD" };
+            packet.skills.Add(new C_PlayerInfoReq.Skill() { id = 101, duration = 3.0f, level = 1 });
+            packet.skills.Add(new C_PlayerInfoReq.Skill() { id = 102, duration = 6.0f, level = 3 });
+            packet.skills.Add(new C_PlayerInfoReq.Skill() { id = 103, duration = 9.0f, level = 6 });
+            packet.skills.Add(new C_PlayerInfoReq.Skill() { id = 104, duration = 12.0f, level = 9 });
 
 
             // 보낸다

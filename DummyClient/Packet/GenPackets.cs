@@ -6,12 +6,20 @@ using ServerCore;
 
 public enum PacketID
 {
-    PlayerInfoReq = 1,
-	Test = 2,
+    C_PlayerInfoReq = 1,
+	S_Test = 2,
 	
 }
 
-class PlayerInfoReq
+
+interface IPacket
+{
+	ushort Protocol { get; }
+	void Read(ArraySegment<byte> segment);
+	ArraySegment<byte> Write();
+}
+
+class C_PlayerInfoReq : IPacket
 {
     public byte testByte;
 	
@@ -100,6 +108,9 @@ class PlayerInfoReq
 	
 	public List<Skill> skills = new List<Skill>();
 	
+
+	public ushort Protocol { get { return (ushort)PacketID.C_PlayerInfoReq; } }
+
     public void Read(ArraySegment<byte> segment)
     {
         ushort count = 0;
@@ -142,7 +153,7 @@ class PlayerInfoReq
         Span<byte> s = new Span<byte>(segment.Array, segment.Offset + count, segment.Count - count);
 
         count += sizeof(ushort);
-        success &= BitConverter.TryWriteBytes(s.Slice(count, s.Length - count), (ushort)PacketID.PlayerInfoReq);
+        success &= BitConverter.TryWriteBytes(s.Slice(count, s.Length - count), (ushort)PacketID.C_PlayerInfoReq);
         count += sizeof(ushort);
         
         segment.Array[segment.Offset + count] = (byte)this.testByte;
@@ -172,10 +183,13 @@ class PlayerInfoReq
         return SendBufferHelper.Close(count);
     }
 }
-class Test
+class S_Test : IPacket
 {
     public string testInt;
 	
+
+	public ushort Protocol { get { return (ushort)PacketID.S_Test; } }
+
     public void Read(ArraySegment<byte> segment)
     {
         ushort count = 0;
@@ -187,7 +201,7 @@ class Test
        
         ushort testIntLen = BitConverter.ToUInt16(s.Slice(count, s.Length - count));
 		count += sizeof(ushort);
-		this.testInt = Encoding.Unicode.GetString(s.Slice(count, nameLen));
+		this.testInt = Encoding.Unicode.GetString(s.Slice(count, testIntLen));
 		count += testIntLen;
 		
     }
@@ -202,7 +216,7 @@ class Test
         Span<byte> s = new Span<byte>(segment.Array, segment.Offset + count, segment.Count - count);
 
         count += sizeof(ushort);
-        success &= BitConverter.TryWriteBytes(s.Slice(count, s.Length - count), (ushort)PacketID.Test);
+        success &= BitConverter.TryWriteBytes(s.Slice(count, s.Length - count), (ushort)PacketID.S_Test);
         count += sizeof(ushort);
         
         ushort testIntLen = (ushort)Encoding.Unicode.GetBytes(this.testInt, 0, this.testInt.Length, segment.Array, segment.Offset + count + sizeof(ushort));
